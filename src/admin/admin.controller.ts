@@ -1,10 +1,10 @@
 import { ProductEntity } from './../model/product.entity';
 import { AdminService } from './admin.service';
-import { Controller, Post, UploadedFile, UseInterceptors, Body, HttpException, HttpStatus, Param, Delete, Req, Get, Headers,  } from '@nestjs/common';
+import { Controller, Post, UploadedFile, UseInterceptors, Body, HttpException, HttpStatus, Param, Delete, Req, Get, Headers, Res,  } from '@nestjs/common';
 import { ProductService } from 'src/product/product.service';
 import { FileInterceptor } from '@nestjs/platform-express';
 import * as cookieParser from 'cookie-parser';
-import { Request, Response, NextFunction } from 'express';
+import { Request, Response, NextFunction, response } from 'express';
 
 
 @Controller('admin')
@@ -30,8 +30,9 @@ export class AdminController {
     // }
 
 
-    @Get("/addAdmin")
-    findAll(@Req() request: Request,@Headers() header) {
+    @Get("/addAdmin") 
+    findAll(@Req() request: Request,@Res() response, @Headers() header) {
+        response.cookie('key', 'value')
   console.log(request.cookies); //[Object: null prototype] {}
   return(request.cookies)
   
