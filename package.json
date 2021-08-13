@@ -42,6 +42,9 @@
     "typeorm": "^0.2.36",
     "uuid": "^8.3.2"
   },
+  "engines": {
+    "node": "14.x"
+  },
   "devDependencies": {
     "@nestjs/cli": "^8.0.0",
     "@nestjs/schematics": "^8.0.0",
@@ -82,7 +85,4 @@
     "coverageDirectory": "../coverage",
     "testEnvironment": "node"
   },
-  "engines": {
-    "node": "14.x"
-  }
 }
