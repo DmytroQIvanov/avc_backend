@@ -20,11 +20,11 @@ import { AdminAuthMiddleware } from 'src/admin-auth.middleware';
   providers: [AdminService,ProductService]
 })
 export class AdminModule {
-//   configure(consumer: MiddlewareConsumer) {
-//   consumer
-//     .apply(AdminAuthMiddleware)
-//     .forRoutes(
-//       { path: '/admin/addProduct', method: RequestMethod.ALL },
-//     { path: '/admin/addAdmin', method: RequestMethod.ALL });
-// }
+  configure(consumer: MiddlewareConsumer) {
+  consumer
+    .apply(AdminAuthMiddleware)
+    .forRoutes(
+      { path: '/admin/login', method: RequestMethod.ALL },
+    { path: '/admin/addAdmin', method: RequestMethod.ALL });
+}
 }

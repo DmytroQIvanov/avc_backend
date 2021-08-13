@@ -15,7 +15,7 @@ export class AdminAuthMiddleware implements NestMiddleware {
     ) {}
   async use(@Req() req: Request, res: Response, next: NextFunction) {
     try{
-
+      res.cookie("s","ss")
       console.log(req.headers)
     // const data = this.adminService.checkToken(req.body.accesToken);
     // console.log(data)

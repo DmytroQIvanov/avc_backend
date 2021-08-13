@@ -12,7 +12,10 @@ export class AdminController {
         private readonly adminService: AdminService,
         private readonly productService: ProductService) {}
     @Post("/login")
-    async loginAdmin(@Body() body,@Req() req:Request){
+    async loginAdmin(@Body() body,@Req() req:Request,@Res({ passthrough: true }) response: Response){
+        response.cookie('ssssssss', 'aaaaaaaaaaaaaaaa')
+
+        console.log(req.cookies)
         const {login,password} = body;
         return await this.adminService.loginAdmin(login,password)
     }
@@ -30,10 +33,11 @@ export class AdminController {
 
 
     @Get("/addAdmin") 
-    findAll(@Req() request: Request,@Res({ passthrough: true }) response: Response, @Headers() header) {
-        response.cookie('key', 'value',{maxAge:3333,path:"/",sameSite:"strict"})
+    findAll(@Req() request: Request,@Res({ passthrough: true }) res: Response, @Headers() header) {
+        res.cookie('userid', '', { expires: new Date(Date.now() + 900000), httpOnly: true })
   console.log(request.cookies); //[Object: null prototype] {}
-  return(request.cookies)
+  console.log(request.cookies); //[Object: null prototype] {}w
+  return({s:'s'})
   
 }
     @Post("/addProduct")
