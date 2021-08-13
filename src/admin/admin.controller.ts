@@ -31,7 +31,7 @@ export class AdminController {
 
     @Get("/addAdmin") 
     findAll(@Req() request: Request,@Res({ passthrough: true }) response: Response, @Headers() header) {
-        response.cookie('key', 'value',{maxAge:3333})
+        response.cookie('key', 'value',{maxAge:3333,path:"/",sameSite:"strict"})
   console.log(request.cookies); //[Object: null prototype] {}
   return(request.cookies)
   
