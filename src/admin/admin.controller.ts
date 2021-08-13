@@ -3,7 +3,6 @@ import { AdminService } from './admin.service';
 import { Controller, Post, UploadedFile, UseInterceptors, Body, HttpException, HttpStatus, Param, Delete, Req, Get, Headers, Res,  } from '@nestjs/common';
 import { ProductService } from 'src/product/product.service';
 import { FileInterceptor } from '@nestjs/platform-express';
-import * as cookieParser from 'cookie-parser';
 import { Request, Response, NextFunction, response } from 'express';
 
 
@@ -31,8 +30,8 @@ export class AdminController {
 
 
     @Get("/addAdmin") 
-    findAll(@Req() request: Request,@Res() response, @Headers() header) {
-        response.cookie('key', 'value')
+    findAll(@Req() request: Request,@Res({ passthrough: true }) response: Response, @Headers() header) {
+        response.cookie('key', 'value',{maxAge:3333,domain:"localhost"})
   console.log(request.cookies); //[Object: null prototype] {}
   return(request.cookies)
   
