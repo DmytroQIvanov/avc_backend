@@ -34,8 +34,13 @@ export class AdminController {
 
     @Get("/addAdmin") 
     findAll(@Req() request: Request,@Res({ passthrough: true }) res: Response, @Headers() header) {
+  
+        res.set('Access-Control-Allow-Origin', '*')
+        res.set('Access-Control-Allow-Credentials', 'true')
         res.cookie('userid', '', { expires: new Date(Date.now() + 900000), httpOnly: true })
-        res.set('Access-Control-Allow-Credentials','true')
+        
+
+        res.set('Access-Control-Allow-Credentials',"true")
         res.send({message:"smth"})
   console.log(request.cookies); //[Object: null prototype] {}
   console.log(request.cookies); //[Object: null prototype] {}w
