@@ -24,7 +24,9 @@ export class AdminModule {
   consumer
     .apply(AdminAuthMiddleware)
     .forRoutes(
-      { path: '/admin/login', method: RequestMethod.ALL },
-    { path: '/admin/addAdmin', method: RequestMethod.ALL });
+      { path: '/admin/auth', method: RequestMethod.ALL },
+    { path: '/admin/addProduct', method: RequestMethod.ALL },
+    { path: '/admin/deleteProduct/*', method: RequestMethod.ALL },
+    );
 }
 }

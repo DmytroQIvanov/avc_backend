@@ -1,65 +1,44 @@
+import { OrderProductEntity } from './orderProduct';
 import { ProductEntity } from './product.entity';
 
 import {
-    PrimaryGeneratedColumn,
-    Column,
-    CreateDateColumn,
-    Entity,
-    Unique,
-    OneToOne,
-    JoinColumn,
-    PrimaryColumn,
-    OneToMany
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  Entity,
+  Unique,
+  OneToMany,
+  JoinColumn,
 } from 'typeorm';
 
-import { Min, Max} from 'class-validator';
-import { BasketEntity } from './basket.entity';
+import { Min, Max } from 'class-validator';
 
 @Entity({ name: 'user' })
-@Unique(["number"])
+@Unique(['number'])
 export class UserEntity {
-    @PrimaryGeneratedColumn('uuid')
-    id: string;
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
 
-    @Column({ type: 'varchar', length: 300, nullable: false })
-    password: string;
+  @Column({ type: 'varchar', length: 300, nullable: false })
+  password: string;
 
-    @Column({ type: 'varchar', length: 300 })
-    lastName: string;
+  @Column({ type: 'varchar', length: 20, nullable: false })
+  firstName: string;
 
-    @Column({ unique: true, name: 'number', nullable: false })
-    @Min(10)
-    @Max(13)
-    number: string;
+  @Column({ type: 'varchar', length: 300, default: '' })
+  lastName: string;
 
-    @Column()
-    firstName: string;
+  @Column({ unique: true, name: 'number', nullable: false })
+  @Min(10)
+  @Max(13)
+  number: string;
 
-    // @OneToOne(()=>BasketEntity)
-    // @JoinColumn()
-    // basket:BasketEntity
+  @OneToMany(() => OrderProductEntity, (product) => product.user)
+  basket: OrderProductEntity[];
 
-    @OneToMany(()=>ProductEntity, product => product.user)
-    basket:ProductEntity[]
+  // @Column({ type: 'boolean', default: false })
+  // isArchived: boolean;
 
-    // @Column({ type: 'boolean', default: true })
-    // isActive: boolean;
-
-    // @Column({ type: 'boolean', default: false })
-    // isArchived: boolean;
-
-    @CreateDateColumn({ type: 'timestamptz', default: () => 'CURRENT_TIMESTAMP' })
-    createDateTime: Date;
-
-    // @Column({ type: 'varchar', length: 300 })
-    // createdBy: string;
-
-    // @UpdateDateColumn({ type: 'timestamptz', default: () => 'CURRENT_TIMESTAMP' })
-    // lastChangedDateTime: Date;
-
-    // @Column({ type: 'varchar', length: 300 })
-    // lastChangedBy: string;
-
-    // @Column({ type: 'varchar', length: 300, nullable: true })
-    // internalComment: string | null;
+  @CreateDateColumn({ type: 'timestamptz', default: () => 'CURRENT_TIMESTAMP' })
+  createDateTime: Date;
 }

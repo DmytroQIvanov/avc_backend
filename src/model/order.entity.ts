@@ -20,7 +20,7 @@ export class OrderEntity {
     @Column({ type: 'varchar', length: 300, nullable: false })
     products: ProductEntity[];
 
-    @OneToMany(() => OrderProductEntity, orderProduct => orderProduct.order)
+    @OneToMany(() => OrderProductEntity, orderProduct => orderProduct.id)
     orders: OrderProductEntity[];
 
 }

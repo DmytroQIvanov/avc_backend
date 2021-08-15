@@ -15,10 +15,13 @@ export class AdminAuthMiddleware implements NestMiddleware {
     ) {}
   async use(@Req() req: Request, res: Response, next: NextFunction) {
     try{
-      res.cookie("s","ss")
-      console.log(req.headers)
-    // const data = this.adminService.checkToken(req.body.accesToken);
-    // console.log(data)
+      if(!req.cookies.adminAccesToken){throw new HttpException('Token is not valid middleware', HttpStatus.FORBIDDEN)}
+
+      console.log(req.cookies)
+    const data =await this.adminService.checkToken(req.cookies.adminAccesToken);
+    console.log(data)
+
+    req.headers.login = data.login
 
     next();
 }catch(e){

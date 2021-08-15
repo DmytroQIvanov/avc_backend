@@ -3,14 +3,11 @@ import { ProductEntity } from './product.entity';
 import {
     PrimaryGeneratedColumn,
     Column,
-    CreateDateColumn,
     Entity,
-    Unique,
 } from 'typeorm';
 
-import { Min, Max} from 'class-validator';
 
-@Entity({ name: 'busket' })
+@Entity({ name: 'basket' })
 export class BasketEntity {
     @PrimaryGeneratedColumn('uuid')
     id: string;
@@ -18,7 +15,5 @@ export class BasketEntity {
     @Column({ type: 'varchar', length: 300, nullable: false })
     products: ProductEntity[];
 
-    @Column()
-    totalPrice: number;
 
 }

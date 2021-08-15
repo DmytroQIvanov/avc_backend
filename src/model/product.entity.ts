@@ -41,8 +41,8 @@ export class ProductEntity {
     quantityOfGoods: number
 
     
-    // @Column()
-    // type: ;
+    @Column({nullable:false,default:"protein"})
+    type: "protein" |"gainer"|"bcaa";
 
     @CreateDateColumn({ type: 'timestamptz', default: () => 'CURRENT_TIMESTAMP' })
     createDateTime: Date;
