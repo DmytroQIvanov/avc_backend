@@ -9,7 +9,7 @@ async function bootstrap() {
 
   app.use(cookieParser());
   app.enableCors({
-    origin: 'http://localhost',
+    origin: 'https://avc-firebase.web.app',
     credentials: true,
   });
 
