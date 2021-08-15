@@ -33,7 +33,6 @@ export class AdminController {
     @Req() req: Request,
     @Res({ passthrough: true }) response: Response,
   ) {
-    // response.set('Access-Control-Allow-Credentials',"true")
     const { login, password } = body;
     console.log(body);
     const result = await this.adminService.loginAdmin(login, password);

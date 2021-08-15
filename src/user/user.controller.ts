@@ -28,6 +28,10 @@ export class UserController {
     @Res({ passthrough: true }) response: Response,
   ) {
     console.log(body);
+    response.set('Access-Control-Allow-Credentials', 'true');
+    response.set('Access-Control-Allow-Origin', '*');
+    response.set('Access-Control-Allow-Headers', '*');
+
     const result = await this.userService.loginUser(body);
 
     response.cookie('accessToken', result.accessToken, {
