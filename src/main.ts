@@ -9,7 +9,7 @@ async function bootstrap() {
 
   app.use(cookieParser());
   app.enableCors({
-    origin: 'localhost',
+    origin: 'http://localhost',
     credentials: true,
   });
 
