@@ -11,12 +11,18 @@ import { ProductModule } from './product/product.module';
 @Module({
   imports: [
     TypeOrmModule.forRoot({
+      // type: 'postgres',
+      // host: 'ec2-34-253-116-145.eu-west-1.compute.amazonaws.com',
+      // port: 5432,
+      // username: 'zauypisgxhntsd',
+      // password: '213b28bf10edbe081d4e20b522a36dec0dbb9f8a2133394f97354b1a5e2fcd67',
+      // database: 'dcf52tu6mdqtr9',
       type: 'postgres',
-      host: 'ec2-34-253-116-145.eu-west-1.compute.amazonaws.com',
+      host: '127.0.0.1',
       port: 5432,
-      username: 'zauypisgxhntsd',
-      password: '213b28bf10edbe081d4e20b522a36dec0dbb9f8a2133394f97354b1a5e2fcd67',
-      database: 'dcf52tu6mdqtr9',
+      username: 'postgres',
+      password: '1234',
+      database: 'postgres',
       entities: [UserEntity],
       synchronize: true,
       ssl: true,
@@ -27,28 +33,27 @@ import { ProductModule } from './product/product.module';
         },
       },
     }),
-    
-//     ConfigModule.forRoot({
-//   validationSchema: Joi.object({
-//     POSTGRES_HOST: Joi.string().required(),
-//     POSTGRES_PORT: Joi.number().required(),
-//     POSTGRES_USER: Joi.string().required(),
-//     POSTGRES_PASSWORD: Joi.string().required(),
-//     POSTGRES_DB: Joi.string().required(),
-//     JWT_SECRET: Joi.string().required(),
-//     JWT_EXPIRATION_TIME: Joi.string().required(),
-//     AWS_REGION: Joi.string().required(),
-//     AWS_ACCESS_KEY_ID: Joi.string().required(),
-//     AWS_SECRET_ACCESS_KEY: Joi.string().required(),
-//     PORT: Joi.number(),
-//   })
-// }),
+
+    //     ConfigModule.forRoot({
+    //   validationSchema: Joi.object({
+    //     POSTGRES_HOST: Joi.string().required(),
+    //     POSTGRES_PORT: Joi.number().required(),
+    //     POSTGRES_USER: Joi.string().required(),
+    //     POSTGRES_PASSWORD: Joi.string().required(),
+    //     POSTGRES_DB: Joi.string().required(),
+    //     JWT_SECRET: Joi.string().required(),
+    //     JWT_EXPIRATION_TIME: Joi.string().required(),
+    //     AWS_REGION: Joi.string().required(),
+    //     AWS_ACCESS_KEY_ID: Joi.string().required(),
+    //     AWS_SECRET_ACCESS_KEY: Joi.string().required(),
+    //     PORT: Joi.number(),
+    //   })
+    // }),
     UserModule,
     AdminModule,
     AuthModule,
     ProductModule,
-    
-],
+  ],
   controllers: [AppController],
   providers: [AppService],
 })
