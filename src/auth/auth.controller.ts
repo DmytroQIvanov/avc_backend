@@ -3,13 +3,10 @@ import { AuthService } from './auth.service';
 
 @Controller('auth')
 export class AuthController {
-    constructor(private readonly authService: AuthService){
-
-    }
-    @Post("/login")
-    login(@Body() body){
-        console.log(body.password)
-        return this.authService.login(body.number,body.password,)
-    }
-
+  constructor(private readonly authService: AuthService) {}
+  @Post('/login')
+  login(@Body() body) {
+    console.log(body.password);
+    return this.authService.login(body.number, body.password);
+  }
 }

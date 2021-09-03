@@ -1,34 +1,31 @@
-
 import {
-    PrimaryGeneratedColumn,
-    Column,
-    CreateDateColumn,
-    Entity,
-    Unique,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  Entity,
+  Unique,
 } from 'typeorm';
 
-import { Min, Max} from 'class-validator';
+import { Min, Max } from 'class-validator';
 
 @Entity({ name: 'admin' })
-@Unique(["login"])
+@Unique(['login'])
 export class AdminEntity {
-    @PrimaryGeneratedColumn('uuid')
-    id: string;
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
 
-    @Column({ type: 'varchar', length: 300, nullable: false })
-    password: string;
+  @Column({ type: 'varchar', length: 300, nullable: false })
+  password: string;
 
+  @Column({ unique: true, name: 'login', nullable: false })
+  login: string;
 
-    @Column({ unique: true, name: 'login', nullable: false })
-    login: string;
+  @Column()
+  firstName: string;
 
-    @Column()
-    firstName: string;
-    
-    @Column({ type: 'varchar', length: 300 })
-    lastName: string;
+  @Column({ type: 'varchar', length: 300 })
+  lastName: string;
 
-    @CreateDateColumn({ type: 'timestamptz', default: () => 'CURRENT_TIMESTAMP' })
-    createDateTime: Date;
-
+  @CreateDateColumn({ type: 'timestamptz', default: () => 'CURRENT_TIMESTAMP' })
+  createDateTime: Date;
 }
