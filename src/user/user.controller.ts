@@ -10,11 +10,15 @@ import {
   Patch,
   Delete,
 } from '@nestjs/common';
-import { Request, Response, response } from 'express';
+import { Response } from 'express';
+import { OrderService } from '../order/order.service';
 
 @Controller('user')
 export class UserController {
-  constructor(private readonly userService: UserService) {}
+  constructor(
+    private readonly userService: UserService,
+    private readonly orderService: OrderService,
+  ) {}
 
   @Post()
   addUser(@Body() body, @Headers() headers) {
@@ -27,29 +31,24 @@ export class UserController {
     @Body() body,
     @Res({ passthrough: true }) response: Response,
   ) {
-    console.log(body);
-    response.set('Access-Control-Allow-Credentials', 'true');
-    // response.set('Access-Control-Allow-Origin', '*');
-    response.set('Access-Control-Allow-Headers', '*');
-
     const result = await this.userService.loginUser(body);
-
     response.cookie('accessToken', result.accessToken, {
-      expires: new Date(Date.now() + 900000),
+      expires: new Date(Date.now() + 9000000),
       httpOnly: true,
     });
-    return { user: result.user };
+    return { user: await this.userService.getUser(result.user.id) };
   }
   @Post('/auth')
   async authUser(@Headers() headers) {
-    const userData = await this.userService.getUser(headers.id);
-    const { password, ...user } = userData;
-    return { user };
+    return { user: await this.userService.getUser(headers.id) };
+  }
+  @Post('/order')
+  async addOrder(@Headers('id') id) {
+    return await this.orderService.addOrder(id);
   }
 
   @Get(':id')
   getUser(@Param() param) {
-    console.log(param.id);
     return this.userService.getUser(param.id);
   }
   @Get()
@@ -57,15 +56,18 @@ export class UserController {
     return this.userService.getUsers();
   }
   @Post('/product/:id')
-  addProductToBasket(@Param() param, @Body() body, @Headers() headers) {
-    console.log(headers);
-    return this.userService.addProductToBasket(param.id, body.productId);
+  addProductToBasket(@Param() param, @Headers() headers) {
+    return this.userService.addProductToBasket(headers.id, param.id);
   }
   @Delete('/product/:id')
-  deleteProductFromBasket(@Param() param, @Body() body, @Headers() headers) {
-    console.log(headers);
-    return this.userService.deleteProductFromBasket(param.id, body.productId);
+  deleteProductFromBasket(@Param() param, @Headers() headers) {
+    return this.userService.deleteProductFromBasket(headers.id, param.id);
   }
+  @Delete('/product')
+  deleteProductsFromBasket(@Headers() headers) {
+    return this.userService.deleteProductsFromBasket(headers.id);
+  }
+
   @Patch('/logout')
   logout(@Res({ passthrough: true }) response: Response) {
     response.cookie('accessToken', '', {

@@ -1,5 +1,4 @@
 import { OrderProductEntity } from './orderProduct';
-import { ProductEntity } from './product.entity';
 
 import {
   PrimaryGeneratedColumn,
@@ -8,10 +7,10 @@ import {
   Entity,
   Unique,
   OneToMany,
-  JoinColumn,
 } from 'typeorm';
 
 import { Min, Max } from 'class-validator';
+import { OrderEntity } from './order.entity';
 
 @Entity({ name: 'user' })
 @Unique(['number'])
@@ -33,12 +32,14 @@ export class UserEntity {
   @Max(13)
   number: string;
 
-  @OneToMany(() => OrderProductEntity, (product) => product.user)
+  @OneToMany(() => OrderProductEntity, (product) => product.user, {})
   basket: OrderProductEntity[];
-
-  // @Column({ type: 'boolean', default: false })
-  // isArchived: boolean;
 
   @CreateDateColumn({ type: 'timestamptz', default: () => 'CURRENT_TIMESTAMP' })
   createDateTime: Date;
+
+  @OneToMany((type) => OrderEntity, (order) => order.user, {
+    cascade: true,
+  })
+  orders: OrderEntity[];
 }

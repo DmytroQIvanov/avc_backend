@@ -1,35 +1,35 @@
 import { UserEntity } from 'src/model/user.entity';
-import { OrderEntity } from './order.entity';
 import { ProductEntity } from './product.entity';
 
 import {
   PrimaryGeneratedColumn,
   Column,
-  CreateDateColumn,
   Entity,
-  Unique,
-  OneToOne,
-  JoinColumn,
   ManyToOne,
-  OneToMany,
-  ManyToMany,
+  JoinColumn,
+  JoinTable,
 } from 'typeorm';
 
 import { Min, Max } from 'class-validator';
+import { OrderEntity } from './order.entity';
 
-@Entity({ name: 'basket' })
+@Entity()
 export class OrderProductEntity {
   @PrimaryGeneratedColumn('uuid')
-  id: string;
+  ID: string;
 
-  @ManyToMany(() => ProductEntity, (product) => product.user)
-  @JoinColumn()
+  @ManyToOne(() => ProductEntity, (product) => product)
   product: ProductEntity;
 
   @Min(0)
   @Column()
   quantity: number;
 
-  @ManyToOne((type) => UserEntity)
+  @ManyToOne((type) => UserEntity, (user) => user.basket, {
+    cascade: true,
+  })
   user: UserEntity;
+
+  @ManyToOne((type) => OrderEntity, (order) => order.orderProducts)
+  order: OrderEntity;
 }

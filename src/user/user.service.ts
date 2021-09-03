@@ -1,18 +1,25 @@
-import { OrderProductEntity } from './../model/orderProduct';
+import { OrderProductEntity } from '../model/orderProduct';
 import { JwtService } from '@nestjs/jwt';
 import { ProductEntity } from './../model/product.entity';
 import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { UserEntity } from 'src/model/user.entity';
 import { Repository } from 'typeorm';
+import * as bcrypt from 'bcrypt';
+import { OrderEntity } from '../model/order.entity';
 
 @Injectable()
 export class UserService {
   constructor(
     @InjectRepository(UserEntity)
     private usersRepository: Repository<UserEntity>,
+
     @InjectRepository(ProductEntity)
     private productRepository: Repository<ProductEntity>,
+
+    @InjectRepository(OrderEntity)
+    private orderRepository: Repository<OrderEntity>,
+
     @InjectRepository(OrderProductEntity)
     private orderProductEntity: Repository<OrderProductEntity>,
     private jwtService: JwtService,
@@ -26,15 +33,16 @@ export class UserService {
   ) {
     try {
       number = number.replace('+', '');
-      const user = this.usersRepository.create();
-      user.password = password;
-      user.number = number;
-      user.firstName = firstName;
-      user.lastName = lastName;
-      await this.usersRepository.save(user);
-      return user;
+
+      const hashedPassword = await bcrypt.hash(password, 10);
+      const user = this.usersRepository.create({
+        password: hashedPassword,
+        number,
+        firstName,
+        lastName,
+      });
+      return await this.usersRepository.save(user);
     } catch (e) {
-      // console.log(e.code)
       if (e.code == 23505) {
         throw new HttpException('So number already exist', HttpStatus.CONFLICT);
       }
@@ -42,12 +50,40 @@ export class UserService {
     }
   }
   async getUser(id) {
-    const user = await this.usersRepository.findOne({
+    const userData = await this.usersRepository.findOne({
       where: { id },
-      relations: ['basket'],
+      relations: ['basket', 'orders'],
     });
-    const orderProducts = user.basket.length;
-    return { ...user, orderProducts };
+    let basket1 = [];
+    let basketLength = 0;
+
+    let ordersData = [];
+    if (!userData) {
+      throw new HttpException('User is not found', HttpStatus.BAD_REQUEST);
+    }
+
+    if (userData) {
+      basketLength = userData.basket.length;
+      basket1 = await Promise.all(
+        userData?.basket.map(async (elem) => {
+          return await this.orderProductEntity.findOne({
+            where: { ID: elem.ID },
+            relations: ['product'],
+          });
+        }),
+      );
+
+      ordersData = await Promise.all(
+        userData.orders.map(async (elem) => {
+          return await this.orderRepository.findOne({
+            where: { id: elem.id },
+            relations: ['orderProducts'],
+          });
+        }),
+      );
+    }
+    const { basket, password, orders, ...user } = userData;
+    return { ...user, basketLength, basket: basket1, orders: ordersData };
   }
   async getUsers() {
     return await this.usersRepository.find();
@@ -58,40 +94,64 @@ export class UserService {
   async addProductToBasket(id, productId, quantity = 1) {
     const user = await this.usersRepository.findOne({
       where: { id },
-      relations: ['basket'],
+      relations: ['basket', 'orders'],
     });
-    const product = await this.productRepository.findOne({ id: productId });
+    const userData = await this.getUser(id);
+    for (let i = 0; i < userData.basket.length; i++) {
+      if (userData.basket[i].product.id === productId) {
+        user.basket[i].quantity += quantity;
+        await this.usersRepository.save(user);
+        return { user: await this.getUser(id) };
+      }
+    }
+    const product = await this.productRepository.findOne({
+      where: { id: productId },
+    });
+    // console.log(product.id);
     const orderProduct = await this.orderProductEntity.create({
       product,
       quantity,
       user,
     });
-    user.basket.push(orderProduct);
     await this.orderProductEntity.save(orderProduct);
-    await this.usersRepository.save(user);
     return { user: await this.getUser(id) };
   }
 
   async deleteProductFromBasket(id, productId) {
-    // const user = await this.usersRepository.findOne({
-    //   where: { id },
-    //   relations: ['basket'],
-    // });
-    // // const product = await this.productRepository.findOne({ id: productId });
-    // // user.basket.slice();
-    // await this.orderProductEntity.delete({ id: productId });
-    // // await this.usersRepository.save(user);
-    // return { user: await this.getUser(id) };
+    try {
+      await this.orderProductEntity.delete({ ID: productId });
+      return { user: await this.getUser(id) };
+    } catch (e) {
+      console.log(e);
+    }
+  }
+  async deleteProductsFromBasket(id) {
+    try {
+      const user = this.usersRepository.findOne(id);
+      await this.orderProductEntity.delete({ user: id });
+      return { user: await this.getUser(id) };
+    } catch (e) {
+      console.log(e);
+    }
   }
   async loginUser({ login, password }) {
-    const user = await this.usersRepository.findOne({
+    const userData = await this.usersRepository.findOne({
       where: { number: login },
     });
-    if (user && user.password == password) {
+    console.log(userData);
+    if (!userData) {
+      throw new HttpException('User not found', HttpStatus.BAD_REQUEST);
+    }
+    const isPasswordMatching = await bcrypt.compare(
+      password,
+      userData.password,
+    );
+    if (userData && isPasswordMatching) {
       const accessToken = this.jwtService.sign({
-        login: user.number,
-        id: user.id,
+        login: userData.number,
+        id: userData.id,
       });
+      const { password, ...user } = userData;
 
       return { user, accessToken };
     }
@@ -99,15 +159,13 @@ export class UserService {
   }
   async checkToken(accessToken) {
     try {
-      console.log(accessToken);
-
       const accesTokenObj = await this.jwtService.verify(accessToken);
 
       const user = await this.usersRepository.findOne({
         id: accesTokenObj['id'],
       });
-      const { password, ...returnsData } = user;
       if (user) {
+        const { password, ...returnsData } = user;
         return returnsData;
       } else {
         throw new HttpException('User not found', HttpStatus.FORBIDDEN);

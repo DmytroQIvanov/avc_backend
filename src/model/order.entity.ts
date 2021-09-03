@@ -1,26 +1,34 @@
 import { ProductEntity } from './product.entity';
 
 import {
-    PrimaryGeneratedColumn,
-    Column,
-    Entity,
-    Unique,
-    OneToOne,
-    OneToMany,
+  PrimaryGeneratedColumn,
+  Column,
+  Entity,
+  Unique,
+  OneToOne,
+  OneToMany,
+  ManyToOne,
+  ManyToMany,
+  JoinTable,
 } from 'typeorm';
 
-import { Min, Max} from 'class-validator';
 import { OrderProductEntity } from './orderProduct';
+import { UserEntity } from './user.entity';
 
 @Entity({ name: 'busket' })
 export class OrderEntity {
-    @PrimaryGeneratedColumn('uuid')
-    id: string;
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
 
-    @Column({ type: 'varchar', length: 300, nullable: false })
-    products: ProductEntity[];
+  @OneToMany(() => OrderProductEntity, (product) => product.order, {
+    cascade: true,
+  })
+  @JoinTable()
+  orderProducts: OrderProductEntity[];
 
-    @OneToMany(() => OrderProductEntity, orderProduct => orderProduct.id)
-    orders: OrderProductEntity[];
+  @ManyToOne(() => UserEntity, (user) => user.orders)
+  user: UserEntity;
 
+  @Column({ default: 'Accepted' })
+  status: string;
 }

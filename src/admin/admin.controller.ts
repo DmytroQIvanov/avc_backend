@@ -1,3 +1,4 @@
+import { PostService } from './../post/post.service';
 import { ProductEntity } from './../model/product.entity';
 import { AdminService } from './admin.service';
 import {
@@ -16,9 +17,14 @@ import {
   Res,
   Header,
   Patch,
+  UploadedFiles,
 } from '@nestjs/common';
 import { ProductService } from 'src/product/product.service';
-import { FileInterceptor } from '@nestjs/platform-express';
+import {
+  AnyFilesInterceptor,
+  FileInterceptor,
+  FilesInterceptor,
+} from '@nestjs/platform-express';
 import { Request, Response, response } from 'express';
 
 @Controller('admin')
@@ -26,6 +32,7 @@ export class AdminController {
   constructor(
     private readonly adminService: AdminService,
     private readonly productService: ProductService,
+    private readonly postService: PostService,
   ) {}
   @Post('/login')
   async loginAdmin(
@@ -34,7 +41,6 @@ export class AdminController {
     @Res({ passthrough: true }) response: Response,
   ) {
     const { login, password } = body;
-    console.log(body);
     const result = await this.adminService.loginAdmin(login, password);
     response.cookie('adminAccesToken', result.accesToken, {
       expires: new Date(Date.now() + 900000),
@@ -45,11 +51,6 @@ export class AdminController {
 
   @Post('/addAdmin')
   addAdmin(@Body() body, @Req() req: Request) {
-    // const result = JSONCookie.toString()
-    // const result = req.cookies;
-    // const result2 = cookieParser.JSONCookies(result)
-
-    // console.log(result,result2)
     const { firstName, lastName, login, password } = body;
     return this.adminService.addAdmin(body.key, {
       firstName,
@@ -59,11 +60,17 @@ export class AdminController {
     });
   }
 
+  @Post('/addPost')
+  addPost(@Body() body, @Req() req: Request) {
+    // const { content, name } = body;
+    return this.postService.addPost(body);
+  }
+
   @Post('/addProduct')
-  @UseInterceptors(FileInterceptor('file'))
-  addItem(@Body() body: ProductEntity, @UploadedFile() file) {
+  @UseInterceptors(AnyFilesInterceptor())
+  addItem(@Body() body: ProductEntity, @UploadedFiles() files) {
     try {
-      return this.productService.postProduct(body, file.buffer, file.fieldname);
+      return this.productService.postProduct(body, files);
     } catch (e) {
       console.log(e);
       throw new HttpException('Bad request', HttpStatus.BAD_REQUEST);
