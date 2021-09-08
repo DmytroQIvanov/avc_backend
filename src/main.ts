@@ -9,6 +9,7 @@ async function bootstrap() {
 
   app.use(cookieParser());
   app.enableCors({
+    // origin: ['http://localhost:3000'],
     origin: ['https://avc-team.com.ua'],
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     preflightContinue: false,

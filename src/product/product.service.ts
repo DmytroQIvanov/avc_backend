@@ -80,7 +80,7 @@ export class ProductService {
         description,
         price,
         type,
-        hot,
+        // hot,
       });
       const s3 = new S3();
 
@@ -118,7 +118,11 @@ export class ProductService {
   }
   async deleteProduct(id) {
     try {
+      const s3 = new S3();
+      s3.deleteObject((err, {}) => {});
+
       const result = await this.productRepository.delete({ id });
+
       return { deleted: true };
     } catch (e) {
       throw new HttpException(
