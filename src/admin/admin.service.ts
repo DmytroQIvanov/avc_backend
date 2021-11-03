@@ -25,11 +25,10 @@ export class AdminService {
     const admin = await this.adminRepository.findOne({ login });
 
     if (admin && admin.password == password) {
-      console.log(admin);
       const login = admin.login;
       const accesToken = this.jwtService.sign(
         { login },
-        { expiresIn: '3600s' },
+        { expiresIn: '360000s' },
       );
 
       const randomKey = uuid();
@@ -55,7 +54,7 @@ export class AdminService {
 
       console.log(accesTokenObj['login']);
 
-      const accesTokenGet = this.jwtService.sign({}, { expiresIn: '3600s' });
+      const accesTokenGet = this.jwtService.sign({}, { expiresIn: '9600s' });
 
       return;
     } catch (e) {

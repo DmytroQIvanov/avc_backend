@@ -1,5 +1,5 @@
 import { ProductService } from './product.service';
-import { Controller, Get, Param, Post, Query, Body, Res } from '@nestjs/common';
+import { Controller, Get, Param, Post, Query, Body } from '@nestjs/common';
 
 @Controller('product')
 export class ProductController {
@@ -15,21 +15,8 @@ export class ProductController {
     return this.productService.getSideBar();
   }
 
-  // @Get('/test')
-  // test() {
-
-  //   return this.productService.forTest();
-  // }
-  // @Get("/:filename")
-  //   async getFile(@Param("filename") filename: string, @Res() res: any) {
-  //       res.sendFile(filename, { root: 'static/image'});
-  //   }
   @Get(':id')
   getProduct(@Param() param) {
     return this.productService.getProduct(param.id);
-  }
-  @Post('/protein')
-  postProtein(@Body() body) {
-    return this.productService.addProtein(body);
   }
 }

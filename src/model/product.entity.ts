@@ -1,5 +1,3 @@
-import { GainerEntity } from './Products/gainer.entity';
-import { ProteinEntity } from './Products/proitein.entity';
 import { UserEntity } from 'src/model/user.entity';
 
 import {
@@ -9,12 +7,11 @@ import {
   Entity,
   Unique,
   ManyToOne,
-  OneToOne,
-  JoinColumn,
+  OneToMany,
 } from 'typeorm';
 
-import { Min, Max } from 'class-validator';
-import { OrderProductEntity } from './orderProduct';
+import { CommentEntity } from './comment.entity';
+import { ProductVariantEntity } from './product-variant.entity';
 
 @Entity()
 @Unique(['name'])
@@ -28,40 +25,28 @@ export class ProductEntity {
   @Column({ type: 'varchar', length: 3000 })
   description: string;
 
-  @Column()
-  price: number;
-
   @Column({ default: 0 })
   rating: number;
-
-  @Column()
-  imageKey1: string;
-
-  @Column()
-  imageKey2: string;
-
-  @Column()
-  imageKey3: string;
-
-  @Column()
-  imageName: string;
 
   @ManyToOne(() => UserEntity, (user) => user.basket)
   user: UserEntity;
 
-  @Column({ default: 0 })
-  quantityOfGoods: number;
-
-  @Column({ nullable: false, default: 'protein' })
-  type: 'protein' | 'gainer' | 'bcaa';
+  @Column()
+  type: string;
 
   @CreateDateColumn({ type: 'timestamptz', default: () => 'CURRENT_TIMESTAMP' })
   createDateTime: Date;
 
-  @OneToOne((type) => ProteinEntity, { cascade: true })
-  @JoinColumn({ name: 'id_contact' })
-  typeColumn: ProteinEntity | GainerEntity;
-
   @Column({ default: false })
   hot: boolean;
+
+  @OneToMany(() => CommentEntity, (comment) => comment.product, {
+    cascade: true,
+  })
+  comments: CommentEntity[];
+
+  @OneToMany(() => ProductVariantEntity, (product) => product.product, {
+    cascade: true,
+  })
+  productVariant: ProductVariantEntity[];
 }

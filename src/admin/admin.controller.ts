@@ -4,7 +4,6 @@ import { AdminService } from './admin.service';
 import {
   Controller,
   Post,
-  UploadedFile,
   UseInterceptors,
   Body,
   HttpException,
@@ -15,17 +14,14 @@ import {
   Get,
   Headers,
   Res,
-  Header,
-  Patch,
   UploadedFiles,
+  Patch,
 } from '@nestjs/common';
 import { ProductService } from 'src/product/product.service';
-import {
-  AnyFilesInterceptor,
-  FileInterceptor,
-  FilesInterceptor,
-} from '@nestjs/platform-express';
+import { AnyFilesInterceptor } from '@nestjs/platform-express';
 import { Request, Response, response } from 'express';
+import { UserService } from '../user/user.service';
+import { OrderService } from '../order/order.service';
 
 @Controller('admin')
 export class AdminController {
@@ -33,6 +29,8 @@ export class AdminController {
     private readonly adminService: AdminService,
     private readonly productService: ProductService,
     private readonly postService: PostService,
+    private readonly usersService: UserService,
+    private readonly orderService: OrderService,
   ) {}
   @Post('/login')
   async loginAdmin(
@@ -68,18 +66,29 @@ export class AdminController {
 
   @Post('/addProduct')
   @UseInterceptors(AnyFilesInterceptor())
-  addItem(@Body() body: ProductEntity, @UploadedFiles() files) {
+  addItem(@Body() body, @UploadedFiles() files) {
     try {
+      console.log(body);
+      console.log(files);
+      body.productVariant = JSON.parse(body.productVariant);
+
       return this.productService.postProduct(body, files);
     } catch (e) {
       console.log(e);
       throw new HttpException('Bad request', HttpStatus.BAD_REQUEST);
     }
   }
+  @Post('/updateProduct')
+  @UseInterceptors(AnyFilesInterceptor())
+  updateProduct(@Body() body: ProductEntity) {
+    console.log(body);
+    return this.productService.updateProduct(body, body.id);
+  }
 
   @Delete('/deleteProduct/:id')
   deleteProduct(@Param() param) {
     try {
+      console.log(param.id);
       return this.productService.deleteProduct(param.id);
     } catch (e) {
       console.log(e);
@@ -96,5 +105,25 @@ export class AdminController {
   checkToken(@Headers() request) {
     const { login } = request;
     return { login };
+  }
+
+  @Get('/users')
+  getUsers(@Body() body, @Req() req: Request) {
+    // const { content, name } = body;
+    return this.usersService.getUsers();
+  }
+
+  @Get('/orders')
+  getOrders(@Body() body, @Req() req: Request) {
+    return this.orderService.getOrders();
+  }
+  @Delete('/order')
+  deleteOrder(@Body() body, @Req() req: Request) {
+    console.log(body);
+    return this.orderService.deleteOrder(body.id);
+  }
+  @Delete('/user/:id')
+  deleteUser(@Body() body, @Param('id') id) {
+    return this.usersService.deleteUser(id);
   }
 }

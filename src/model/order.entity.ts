@@ -10,6 +10,7 @@ import {
   ManyToOne,
   ManyToMany,
   JoinTable,
+  CreateDateColumn,
 } from 'typeorm';
 
 import { OrderProductEntity } from './orderProduct';
@@ -25,6 +26,18 @@ export class OrderEntity {
   })
   @JoinTable()
   orderProducts: OrderProductEntity[];
+
+  @Column({ nullable: true })
+  orderNotes: string;
+
+  @Column()
+  deliveryAddress: string;
+
+  @Column({ default: 'Card' })
+  PaymentMethod: string;
+
+  @CreateDateColumn({ name: 'created_at' })
+  orderedAt: Date;
 
   @ManyToOne(() => UserEntity, (user) => user.orders)
   user: UserEntity;

@@ -4,9 +4,10 @@ import { ProductEntity } from './../model/product.entity';
 import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { UserEntity } from 'src/model/user.entity';
-import { Repository } from 'typeorm';
+import { getRepository, Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { OrderEntity } from '../model/order.entity';
+import { NotificationEntity } from '../model/notification.entity';
 
 @Injectable()
 export class UserService {
@@ -22,6 +23,9 @@ export class UserService {
 
     @InjectRepository(OrderProductEntity)
     private orderProductEntity: Repository<OrderProductEntity>,
+
+    @InjectRepository(NotificationEntity)
+    private notificationEntityEntity: Repository<NotificationEntity>,
     private jwtService: JwtService,
   ) {}
 
@@ -32,8 +36,7 @@ export class UserService {
     lastName: string,
   ) {
     try {
-      number = number.replace('+', '');
-
+      // number = number.replace('+', '');
       const hashedPassword = await bcrypt.hash(password, 10);
       const user = this.usersRepository.create({
         password: hashedPassword,
@@ -49,49 +52,52 @@ export class UserService {
       throw new HttpException('Something went wrong', HttpStatus.BAD_REQUEST);
     }
   }
-  async getUser(id) {
-    const userData = await this.usersRepository.findOne({
-      where: { id },
-      relations: ['basket', 'orders'],
-    });
-    let basket1 = [];
-    let basketLength = 0;
 
-    let ordersData = [];
+  async deleteUser(id) {
+    try {
+      const user = await this.usersRepository.delete({ id });
+    } catch (e) {
+      throw new HttpException('Something went wrong', HttpStatus.BAD_REQUEST);
+    }
+  }
+
+  async addGuest() {
+    try {
+      const user = this.usersRepository.create({});
+      console.log(user.id);
+      const accessToken = this.jwtService.sign({
+        id: user.id,
+      });
+      console.log('Guest was created');
+      return await { user: await this.usersRepository.save(user), accessToken };
+    } catch (e) {
+      throw new HttpException('Something went wrong', HttpStatus.BAD_REQUEST);
+    }
+  }
+
+  async getUser(id) {
+    const userData = await getRepository(UserEntity)
+      .createQueryBuilder('user')
+      .leftJoinAndSelect('user.favourite', 'favourite')
+      .leftJoinAndSelect('user.basket', 'basket')
+      .leftJoinAndSelect('user.orders', 'orders')
+      .leftJoinAndSelect('user.notifications', 'notification')
+      .leftJoinAndSelect('basket.product', 'product')
+      .leftJoinAndSelect('product.productVariant', 'productVariant')
+      .leftJoinAndSelect('productVariant.property', 'property')
+      .where('user.id = :id', { id })
+      .getOne();
+
     if (!userData) {
       throw new HttpException('User is not found', HttpStatus.BAD_REQUEST);
     }
-
-    if (userData) {
-      basketLength = userData.basket.length;
-      basket1 = await Promise.all(
-        userData?.basket.map(async (elem) => {
-          return await this.orderProductEntity.findOne({
-            where: { ID: elem.ID },
-            relations: ['product'],
-          });
-        }),
-      );
-
-      ordersData = await Promise.all(
-        userData.orders.map(async (elem) => {
-          return await this.orderRepository.findOne({
-            where: { id: elem.id },
-            relations: ['orderProducts'],
-          });
-        }),
-      );
-    }
     const { basket, password, orders, ...user } = userData;
-    return { ...user, basketLength, basket: basket1, orders: ordersData };
+    return { ...user, basket, orders };
   }
   async getUsers() {
     return await this.usersRepository.find();
   }
-  async logout() {
-    return await this.usersRepository.find();
-  }
-  async addProductToBasket(id, productId, quantity = 1) {
+  async addProductToBasket(id, productId, { quantity = 1, taste, weight }) {
     const user = await this.usersRepository.findOne({
       where: { id },
       relations: ['basket', 'orders'],
@@ -101,26 +107,66 @@ export class UserService {
       if (userData.basket[i].product.id === productId) {
         user.basket[i].quantity += quantity;
         await this.usersRepository.save(user);
-        return { user: await this.getUser(id) };
+        return;
+        // return { user: await this.getUser(id) };
       }
     }
     const product = await this.productRepository.findOne({
       where: { id: productId },
     });
-    // console.log(product.id);
     const orderProduct = await this.orderProductEntity.create({
       product,
       quantity,
       user,
+      taste,
+      weight,
     });
     await this.orderProductEntity.save(orderProduct);
-    return { user: await this.getUser(id) };
+    return;
   }
 
-  async deleteProductFromBasket(id, productId) {
+  async addProductToFavourite(userId, productId) {
+    const user = await getRepository(UserEntity)
+      .createQueryBuilder('user')
+      .leftJoinAndSelect('user.favourite', 'favourite')
+      .where('user.id = :id', { id: userId })
+      .getOne();
+    const product = await this.productRepository.findOne(productId);
+    user.favourite.push(product);
+    await this.usersRepository.save(user);
+
+    return;
+  }
+  async changeProductQuantity(id, productName, quantity = 1) {
     try {
-      await this.orderProductEntity.delete({ ID: productId });
-      return { user: await this.getUser(id) };
+      const user = this.usersRepository.findOne(id);
+      const orderProduct = await this.productRepository.findOne({
+        where: { name: productName },
+      });
+      const product = await this.orderProductEntity.findOne({
+        where: { user, product: orderProduct },
+      });
+      product.quantity = quantity;
+      if (product.quantity <= 0) {
+        product.quantity = 0;
+        return;
+      }
+      await this.orderProductEntity.save(product);
+    } catch (e) {}
+  }
+
+  async deleteProductFromBasket(id, name) {
+    try {
+      const user = this.usersRepository.findOne(id);
+      const product = this.productRepository.findOne({
+        where: { name },
+      });
+      const deleteProduct = await this.orderProductEntity.findOne({
+        where: { user, product },
+      });
+      await this.orderProductEntity.delete({ ID: deleteProduct.ID });
+      return;
+      // return { user: await this.getUser(id) };
     } catch (e) {
       console.log(e);
     }
@@ -138,9 +184,8 @@ export class UserService {
     const userData = await this.usersRepository.findOne({
       where: { number: login },
     });
-    console.log(userData);
     if (!userData) {
-      throw new HttpException('User not found', HttpStatus.BAD_REQUEST);
+      throw new HttpException('Користувач не знайден', HttpStatus.BAD_REQUEST);
     }
     const isPasswordMatching = await bcrypt.compare(
       password,
@@ -155,7 +200,7 @@ export class UserService {
 
       return { user, accessToken };
     }
-    throw new HttpException('Data is not rigth', HttpStatus.FORBIDDEN);
+    throw new HttpException('Data is not right', HttpStatus.FORBIDDEN);
   }
   async checkToken(accessToken) {
     try {

@@ -1,10 +1,14 @@
-import { ProteinEntity } from './../model/Products/proitein.entity';
 import { ProductEntity } from './../model/product.entity';
 import { Injectable, Body, HttpException, HttpStatus } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Any, In, Like, Raw, Repository } from 'typeorm';
+import { Like, ILike, Repository, getRepository, getConnection } from 'typeorm';
 import { S3 } from 'aws-sdk';
 import { v4 as uuid } from 'uuid';
+import { CommentEntity } from '../model/comment.entity';
+import { UserEntity } from '../model/user.entity';
+import { CreateProductDTO } from '../dto/product.dto';
+import { ProductVariantEntity } from '../model/product-variant.entity';
+import { WeigthPriceEntity } from '../model/weigth-price.entity';
 
 @Injectable()
 export class ProductService {
@@ -12,104 +16,135 @@ export class ProductService {
     @InjectRepository(ProductEntity)
     private productRepository: Repository<ProductEntity>,
 
-    @InjectRepository(ProteinEntity)
-    private proteinRepository: Repository<ProteinEntity>,
+    @InjectRepository(UserEntity)
+    private userRepository: Repository<UserEntity>,
+
+    @InjectRepository(CommentEntity)
+    private commentRepository: Repository<CommentEntity>,
+
+    @InjectRepository(ProductVariantEntity)
+    private productVariantRepository: Repository<ProductVariantEntity>,
+
+    @InjectRepository(WeigthPriceEntity)
+    private weightPriceRepository: Repository<WeigthPriceEntity>,
   ) {}
 
   //GET PRODUCTS
-  async getProducts(key = '', quantity = 20, types = ['protein']) {
+  async getProducts(key = '', quantity = 20, types = ['smartVater']) {
     const s3 = new S3();
-    console.log(types);
-    const productsRepository = await this.productRepository.find({
-      where: [{ name: Like(`%${key}%`), type: types && In(types) }],
-      take: quantity,
-      cache: true,
-    });
+    const productsRepository = await getRepository(ProductEntity)
+      .createQueryBuilder('product')
+      .leftJoinAndSelect('product.productVariant', 'productVariant')
+      .leftJoinAndSelect('productVariant.property', 'property')
+
+      .where([
+        {
+          name: ILike(`%${key}%`),
+          // type: types && In(types),
+        },
+        // { description: ILike(`%${key}%`) },
+      ])
+      .getMany();
+    // .where({ name: ILike(`%${key}%`), type: types && In(types), }]);
+
     const numberOfProducts = productsRepository.length;
-    const products = await productsRepository.map((product) => {
-      const url1 = s3.getSignedUrl('getObject', {
-        Bucket: 'avc-bucket',
-        Key: product.imageKey1,
-        Expires: 36000,
-      });
-      return { ...product, url1 };
-    });
-    return { products, numberOfProducts };
+    await productsRepository.map((elem) =>
+      elem.productVariant.map((elem) => {
+        elem.url1 = s3.getSignedUrl('getObject', {
+          Bucket: process.env.AWS_BUCKET_NAME,
+          Key: elem.imageKey1,
+          Expires: 36000,
+        });
+      }),
+    );
+
+    return { products: productsRepository, numberOfProducts };
   }
 
   //GET PRODUCT
-
-  async getProduct(id) {
+  async getProduct(id, taste = 0, weigth = 0) {
     const s3 = new S3();
-    const product = await this.productRepository.findOne({
-      where: { id },
-      relations: ['typeColumn'],
+    const product = await getRepository(ProductEntity)
+      .createQueryBuilder('product')
+      .leftJoinAndSelect('product.comments', 'comments')
+      .leftJoinAndSelect('product.productVariant', 'productVariant')
+      .leftJoinAndSelect('comments.user', 'user')
+      .leftJoinAndSelect('productVariant.property', 'property')
+      .where('product.id = :id', { id })
+      .getOne();
+
+    await product.productVariant.map((elem) => {
+      elem.url1 = s3.getSignedUrl('getObject', {
+        Bucket: process.env.AWS_BUCKET_NAME,
+        Key: elem.imageKey1,
+        Expires: 36000,
+      });
     });
 
-    const url1 = s3.getSignedUrl('getObject', {
-      Bucket: 'avc-bucket',
-      Key: product.imageKey1,
-      Expires: 36000,
-    });
-    const url2 = s3.getSignedUrl('getObject', {
-      Bucket: 'avc-bucket',
-      Key: product.imageKey2,
-      Expires: 36000,
-    });
-    const url3 = s3.getSignedUrl('getObject', {
-      Bucket: 'avc-bucket',
-      Key: product.imageKey3,
-      Expires: 36000,
-    });
-    return { ...product, url1, url2, url3 };
+    return { ...product };
   }
 
-  async postProduct(
-    { name, description, price, type, hot },
-    files: [{ originalname; buffer }],
-  ) {
-    try {
-      if (!name || !description || !price) {
-        throw new HttpException(
-          'Product was not add to store. Bad request',
-          HttpStatus.BAD_REQUEST,
-        );
-      }
-      const product = this.productRepository.create({
-        name,
-        description,
-        price,
-        type,
-        // hot,
-      });
-      const s3 = new S3();
-
-      await Promise.all(
-        files.map(async (img, indx) => {
-          const uploadResult = await s3
-            .upload({
-              Bucket: 'avc-bucket',
-              Body: img.buffer,
-              Key: `${uuid()}-${img.originalname}`,
-              ContentType: 'image/jpeg',
-              Metadata: {
-                Type: 'System defined',
-                Key: 'Content-type',
-                Value: 'image/jpeg',
-              },
-            })
-            .promise();
-          console.log(`imageKey${indx + 1}`);
-          product[`imageKey${indx + 1}`] = uploadResult.Key;
-        }),
+  async postProduct(data: CreateProductDTO, files: [{ originalname; buffer }]) {
+    if (!data.name || !data.description) {
+      throw new HttpException(
+        'Product was not add to store. Bad request',
+        HttpStatus.BAD_REQUEST,
       );
+    }
+    const product = this.productRepository.create({
+      name: data.name,
+      description: data.description,
+      rating: data.rating,
+      type: data.type,
+    });
+    const productVariants = await Promise.all(
+      data.productVariant.map(async (elem) => {
+        const productVariant = await this.productVariantRepository.create(elem);
 
-      product.imageName = 'TODO';
-      await this.productRepository.save(product);
+        productVariant.property = await Promise.all(
+          elem.property.map(async (elem) => {
+            console.log(elem);
+            return await this.weightPriceRepository.create(elem);
+          }),
+        );
+        return productVariant;
+      }),
+    );
+    product.productVariant = productVariants;
 
-      return { success: true, message: 'Product successfully added to store' };
+    const s3 = new S3();
+
+    // const tastes = data.productVariant.length;
+    await Promise.all(
+      files.map(async (img, indx) => {
+        const uploadResult = await s3
+          .upload({
+            Bucket: process.env.AWS_BUCKET_NAME,
+            Body: img.buffer,
+            Key: `${uuid()}-${img.originalname}`,
+            ContentType: 'image/jpeg',
+            Metadata: {
+              Type: 'System defined',
+              Key: 'Content-type',
+              Value: 'image/jpeg',
+            },
+          })
+          .promise();
+        product.productVariant[indx].imageKey1 = uploadResult.Key;
+      }),
+    );
+    console.log(product.productVariant);
+
+    await this.productRepository.save(product);
+
+    return { success: true, message: 'Product successfully added to store' };
+  }
+
+  async updateProduct(body, id) {
+    try {
+      const product = await this.productRepository.update(id, { ...body });
+      return { success: true, message: 'Product successfully updated' };
     } catch (e) {
-      console.log(e);
       throw new HttpException(
         'Product was not add to store. Something went wrong',
         HttpStatus.CONFLICT,
@@ -118,21 +153,64 @@ export class ProductService {
   }
   async deleteProduct(id) {
     try {
-      const s3 = new S3();
-      s3.deleteObject((err, {}) => {});
+      // const s3 = new S3();
+      // s3.deleteObject((err, {}) => {});
+      console.log(id);
 
-      const result = await this.productRepository.delete({ id });
+      // await getConnection()
+      //   .createQueryBuilder()
+      //   .delete()
+      //   .from(ProductEntity)
+      //   .where('id = :id', { id })
+      //   .execute();
+      // const result1 = await this.productRepository.findOne({
+      //   where: { id },
+      //   relations: ['productVariant'],
+      // });
+      // await Promise.all(
+      //   result1.productVariant.map(
+      //     async (elem) =>
+      //       await this.productVariantRepository.delete({ id: elem.id }),
+      //   ),
+      // );
+      const product = await getRepository(ProductEntity)
+        .createQueryBuilder('product')
+        .leftJoinAndSelect('product.comments', 'comments')
+        .leftJoinAndSelect('product.productVariant', 'productVariant')
+        .leftJoinAndSelect('productVariant.property', 'property')
+        .where('product.id = :id', { id })
+        .getOne();
+      await Promise.all(
+        await product.productVariant.map(
+          async (elem) =>
+            await Promise.all(
+              await elem.property.map(
+                async (elem) =>
+                  await this.weightPriceRepository.delete(elem.id),
+              ),
+            ),
+        ),
+      );
+      await Promise.all(
+        await product.productVariant.map(
+          async (elem) => await this.productVariantRepository.delete(elem.id),
+        ),
+      );
 
-      return { deleted: true };
+      const result = await this.productRepository.delete(id);
+
+      //
+      // const result2 = await this.productRepository.r(result);
+
+      // await this.productRepository.save(result);
+      return;
     } catch (e) {
+      console.log(e);
       throw new HttpException(
         'Product was not deleted from store. Something went wrong',
         HttpStatus.CONFLICT,
       );
     }
-  }
-  async addProtein({ name, description, price }) {
-    this.productRepository.create();
   }
   async getLength(elem) {
     const productsRepository = await this.productRepository.find({
@@ -141,37 +219,37 @@ export class ProductService {
     return productsRepository.length;
   }
 
+  async postComment(productId, id, content) {
+    const product = await this.productRepository.findOne({
+      where: { id: productId },
+      relations: ['comments'],
+    });
+    const user = await this.userRepository.findOne({ id });
+    const comment = await this.commentRepository.create({
+      product,
+      content,
+      user,
+    });
+    product.comments.push(comment);
+    return await this.productRepository.save(product);
+  }
+
   async getSideBar() {
     enum products {
-      protein = 'protein',
-      bcaa = 'bcaa',
-      gainer = 'gainer',
+      BCAA_L_glutamine = 'BCAA_L_glutamine',
+      FatBurner = 'FatBurner',
+      MegaAminoMix = 'MegaAminoMix',
+      // smartVater = 'Mg+B',
     }
 
     // console.log(products.protein);
     return {
-      [products.protein]: await this.getLength(products.protein),
-      [products.bcaa]: await this.getLength(products.bcaa),
-      [products.gainer]: await this.getLength(products.gainer),
+      // [products.protein]: await this.getLength(products.protein),
+      [products.MegaAminoMix]: await this.getLength(products.MegaAminoMix),
+      [products.BCAA_L_glutamine]: await this.getLength(
+        products.BCAA_L_glutamine,
+      ),
+      [products.FatBurner]: await this.getLength(products.FatBurner),
     };
-  }
-  async forTest() {
-    const product = await this.productRepository.findOne(
-      '7d0c0954-faa2-409f-8751-303db9c5395b',
-    );
-
-    const protein = await this.proteinRepository.create({
-      taste: ['ss'],
-      weigth: ['300', '350'],
-    });
-    product.typeColumn = protein;
-
-    await this.productRepository.save(product);
-    return await this.productRepository.findOne({
-      where: { id: '7d0c0954-faa2-409f-8751-303db9c5395b' },
-      relations: ['typeColumn'],
-    });
-
-    // const product = this.productRepository.create({name:"ssss",description:"ssss",imageKey1:"s",imageKey2:"s",quantityOfGoods:3,price:333,rating:2,imageName:"smth",type:'protein',imageKey3:"sssssss",})
   }
 }

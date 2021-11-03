@@ -10,6 +10,10 @@ import { UserAuthMiddleware } from 'src/user-auth.middleware';
 import { OrderService } from '../order/order.service';
 import { ProductService } from '../product/product.service';
 import { OrderEntity } from '../model/order.entity';
+import { NotificationEntity } from '../model/notification.entity';
+import { CommentEntity } from '../model/comment.entity';
+import { ProductVariantEntity } from '../model/product-variant.entity';
+import { WeigthPriceEntity } from '../model/weigth-price.entity';
 
 @Module({
   imports: [
@@ -18,6 +22,10 @@ import { OrderEntity } from '../model/order.entity';
       ProductEntity,
       OrderProductEntity,
       OrderEntity,
+      NotificationEntity,
+      ProductVariantEntity,
+      CommentEntity,
+      WeigthPriceEntity,
     ]),
     JwtModule.register({
       secret: 'verySecret222',
@@ -25,7 +33,7 @@ import { OrderEntity } from '../model/order.entity';
     }),
   ],
   controllers: [UserController],
-  providers: [UserService, OrderService],
+  providers: [UserService, OrderService, ProductService],
 })
 export class UserModule {
   configure(consumer: MiddlewareConsumer) {
@@ -34,9 +42,10 @@ export class UserModule {
       .forRoutes(
         { path: '/user/auth', method: RequestMethod.ALL },
         { path: '/user/product/:id', method: RequestMethod.ALL },
-        { path: '/user/product/:id', method: RequestMethod.ALL },
+        { path: '/user/favourite', method: RequestMethod.ALL },
         { path: '/user/order', method: RequestMethod.ALL },
         { path: '/user', method: RequestMethod.GET },
+        { path: '/user/comment/:id', method: RequestMethod.ALL },
       );
   }
 }
