@@ -28,7 +28,8 @@ async function bootstrap() {
     accessKeyId: process.env.AWS_ACCESS_KEY_ID,
     secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
   });
-  await app.listen(process.env.PORT || 3001);
-  console.log('Server has been started! PORT: ' + process.env.PORT);
+  const port = process.env.PORT || 8080;
+  await app.listen(port);
+  console.log('Server has been started! PORT: ' + port);
 }
 bootstrap();
