@@ -3,10 +3,10 @@ import { AppModule } from './app.module';
 import { config } from 'aws-sdk';
 
 import * as cookieParser from 'cookie-parser';
-const TelegramBot = require('node-telegram-bot-api');
+// const TelegramBot = require('node-telegram-bot-api');
 
 const token = '2096231400:AAH5VbFVGwOhHsXs_dYOdS9IGFYfr_NdDaY';
-export const bot = new TelegramBot(token, { polling: true });
+// export const bot = new TelegramBot(token, { polling: true });
 // bot.on('message', (msg) => {
 //   console.log(msg);
 // });
@@ -15,7 +15,7 @@ async function bootstrap() {
 
   app.use(cookieParser());
   app.enableCors({
-    origin: ['192.168.0.103:3000', 'http://localhost:3000'],
+    origin: ['192.168.0.103:3000', 'http://localhost:3002'],
     // origin: ['https://avc-team.com.ua'],
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     preflightContinue: false,

@@ -5,7 +5,7 @@ import { OrderEntity } from '../model/order.entity';
 import { UserEntity } from '../model/user.entity';
 import { OrderProductEntity } from '../model/orderProduct';
 import { NotificationEntity } from '../model/notification.entity';
-import { bot } from '../main';
+// import { bot } from '../main';
 
 @Injectable()
 export class OrderService {
@@ -61,16 +61,16 @@ export class OrderService {
         user,
       });
       await user.notifications.push(notification);
-      bot.sendMessage(
-        '874227832',
-        `Новый заказ! 
-        \n ФИО: ${order.user.firstName + ' ' + order.user.lastName}
-        \n Примечание к заказу: ${order.orderNotes} 
-        \n Товары: ${order.orderProducts.map(
-          (elem) => `${elem.product.name} \n`,
-        )}
-        `,
-      );
+      // bot.sendMessage(
+      //   '874227832',
+      //   `Новый заказ!
+      //   \n ФИО: ${order.user.firstName + ' ' + order.user.lastName}
+      //   \n Примечание к заказу: ${order.orderNotes}
+      //   \n Товары: ${order.orderProducts.map(
+      //     (elem) => `${elem.product.name} \n`,
+      //   )}
+      //   `,
+      // );
 
       return await this.userRepository.save(user);
     } catch (e) {
