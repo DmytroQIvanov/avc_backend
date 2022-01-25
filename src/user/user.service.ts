@@ -131,8 +131,16 @@ export class UserService {
       .leftJoinAndSelect('user.favourite', 'favourite')
       .where('user.id = :id', { id: userId })
       .getOne();
+
+
     const product = await this.productRepository.findOne(productId);
-    user.favourite.push(product);
+    if (user.favourite.filter(e => e.id === product.id).length > 0) {
+      console.log(product)
+      user.favourite = user.favourite.filter((userProduct) => userProduct.id !== product.id);
+    } else {
+      user.favourite.push(product);
+    }
+
     await this.usersRepository.save(user);
 
     return;

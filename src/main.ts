@@ -15,7 +15,7 @@ async function bootstrap() {
 
   app.use(cookieParser());
   app.enableCors({
-    origin: ['http://localhost:3000'],
+    origin: [process.env.ORIGIN],
     // origin: ['https://avc-team.com.ua'],
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     preflightContinue: false,
@@ -29,9 +29,7 @@ async function bootstrap() {
     secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
   });
   const port = process.env.PORT || 8080;
-  const server = await app.listen(port, () => {
-    console.log('smth');
-  });
+  const server = await app.listen(port);
   console.log('Server has been started! PORT: ' + server.address().port);
 }
 bootstrap();

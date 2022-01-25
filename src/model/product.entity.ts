@@ -7,8 +7,8 @@ import {
   Entity,
   Unique,
   ManyToOne,
-  OneToMany,
-} from 'typeorm';
+  OneToMany, ManyToMany
+} from "typeorm";
 
 import { CommentEntity } from './comment.entity';
 import { ProductVariantEntity } from './product-variant.entity';
@@ -21,6 +21,12 @@ export class ProductEntity {
 
   @Column({ type: 'varchar', length: 300, nullable: false })
   name: string;
+
+  @Column({ length: 3000, default: 'Something' })
+  preDescription: string;
+
+  @ManyToMany(() => ProductEntity)
+  recommendationProducts: ProductEntity[];
 
   @Column({ type: 'varchar', length: 3000 })
   description: string;
