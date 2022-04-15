@@ -15,7 +15,7 @@ async function bootstrap() {
 
   app.use(cookieParser());
   app.enableCors({
-    origin: [process.env.ORIGIN, '*','*:*', 'http://localhost:3005'],
+    origin: [process.env.ORIGIN, '*','*:*', 'http://localhost:3005','https://avc-frontend-dmytroqivanov.vercel.app'],
     // origin: ['https://avc-team.com.ua'],
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     preflightContinue: false,
