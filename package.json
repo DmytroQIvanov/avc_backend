@@ -7,7 +7,7 @@
   "license": "UNLICENSED",
   "scripts": {
     "prebuild": "rimraf dist",
-    "heroku-postbuild": "rimraf dist && nest build && node dist/src/main.js",
+    "heroku-postbuild": "rimraf dist && nest build",
     "docker-postbuild": "npm install && npm run build",
     "build": "nest build",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
